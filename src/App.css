@@ -380,6 +380,46 @@
   }
 }
 
+/* Tambahkan media queries untuk responsivitas mobile */
+@media (max-width: 600px) {
+  body {
+    font-size: 16px;
+    padding: 0 4px;
+  }
+  .app-header, .navbar, .sidebar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px 0;
+  }
+  .component-list, .logic-gates {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+  button, .btn, .switch, .input, .output {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1rem;
+    padding: 10px 0;
+  }
+  .logic-gates > * {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  .input-output-section, .gate-section {
+    padding: 8px 0;
+  }
+  .truth-table {
+    font-size: 0.9rem;
+    overflow-x: auto;
+  }
+  .modal, .dialog {
+    width: 95vw;
+    left: 2.5vw;
+    right: 2.5vw;
+    max-width: 100vw;
+  }
+}
+
 /* Touch target for drag handles and buttons */
 .gate-button, .btn, button, .draggable-handle {
   min-width: 44px;
