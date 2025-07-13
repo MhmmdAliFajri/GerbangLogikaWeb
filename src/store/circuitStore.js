@@ -26,6 +26,12 @@ export const useCircuitStore = create((set, get) => ({
   // State untuk temporary connection saat sedang membuat koneksi
   tempConnection: null,
   
+  // State untuk offset canvas (panning)
+  canvasOffset: { x: 0, y: 0 },
+  
+  // State untuk zoom level (untuk layar kecil)
+  zoom: 1,
+  
   // Action untuk menambah komponen baru
   addComponent: (component) => set((state) => ({
     components: [...state.components, { 
@@ -72,10 +78,25 @@ export const useCircuitStore = create((set, get) => ({
   }),
   
   // Action untuk menambah koneksi
-  addConnection: (connection) => set((state) => ({
-    connections: [...state.connections, connection]
-  })),
-  
+  addConnection: (connection) => set((state) => {
+    // Cek apakah koneksi sudah ada (hindari duplikat)
+    const exists = state.connections.some(conn =>
+      conn.from === connection.from &&
+      conn.fromPin === connection.fromPin &&
+      conn.to === connection.to &&
+      conn.toPin === connection.toPin
+    );
+    if (exists) return { connections: state.connections };
+    // Tambahkan id unik jika belum ada
+    const connectionWithId = {
+      id: connection.id || `${connection.from}_${connection.fromPin}_${connection.to}_${connection.toPin}_${Date.now()}`,
+      ...connection
+    };
+    return {
+      connections: [...state.connections, connectionWithId]
+    };
+  }),
+
   // Action untuk menghapus koneksi
   removeConnection: (connectionId) => set((state) => ({
     connections: state.connections.filter(conn => conn.id !== connectionId)
@@ -195,49 +216,164 @@ export const useCircuitStore = create((set, get) => ({
     const state = get();
     const inputComponents = state.components.filter(c => c.type === 'INPUT');
     const outputComponents = state.components.filter(c => c.type === 'OUTPUT');
-    
     if (inputComponents.length === 0) return [];
-    
+
     const numInputs = inputComponents.length;
     const numRows = Math.pow(2, numInputs);
     const truthTable = [];
-    
-    // Generate semua kombinasi input
+
+    // Pure function untuk menghitung output dari kombinasi input tertentu
+    const calculateGateOutput = (gate, inputs) => {
+      switch (gate.type) {
+        case 'AND': return inputs.length > 0 ? inputs.every(input => input === true) : false;
+        case 'OR': return inputs.length > 0 ? inputs.some(input => input === true) : false;
+        case 'NOT': return inputs.length > 0 ? !inputs[0] : true;
+        case 'NAND': return inputs.length > 0 ? !inputs.every(input => input === true) : true;
+        case 'NOR': return inputs.length > 0 ? !inputs.some(input => input === true) : true;
+        case 'XOR': return inputs.length === 2 ? inputs[0] !== inputs[1] : false;
+        case 'XNOR': return inputs.length === 2 ? inputs[0] === inputs[1] : true;
+        default: return false;
+      }
+    };
+
+    // Pure recursive function untuk menghitung nilai komponen
+    const calculateComponentValue = (componentId, inputValues, visited = new Set()) => {
+      if (visited.has(componentId)) return false;
+      visited.add(componentId);
+      const component = state.components.find(c => c.id === componentId);
+      if (!component) return false;
+      if (component.type === 'INPUT') {
+        return inputValues[componentId] || false;
+      }
+      if (component.type === 'OUTPUT' || component.type === 'OUTPUT_LED_ICON') {
+        const inputConn = state.connections.find(conn => conn.to === componentId && conn.toPin === 0);
+        if (inputConn) {
+          return calculateComponentValue(inputConn.from, inputValues, new Set(visited));
+        } else {
+          return false;
+        }
+      }
+      const inputConnections = state.connections.filter(conn => conn.to === componentId).sort((a, b) => a.toPin - b.toPin);
+      const gateInputs = [];
+      for (let i = 0; i < component.inputs; i++) {
+        const connection = inputConnections.find(conn => conn.toPin === i);
+        if (connection) {
+          gateInputs[i] = calculateComponentValue(connection.from, inputValues, new Set(visited));
+        } else {
+          gateInputs[i] = false;
+        }
+      }
+      return calculateGateOutput(component, gateInputs);
+    };
+
     for (let i = 0; i < numRows; i++) {
       const row = {};
-      
       // Set nilai input berdasarkan binary representation dari i
       inputComponents.forEach((input, index) => {
         const bitValue = (i >> (numInputs - 1 - index)) & 1;
         row[input.id] = bitValue === 1;
       });
-      
-      // Temporarily set input values dan hitung output
-      const originalInputValues = { ...state.inputValues };
-      set({ inputValues: row });
-      get().calculateOutputs();
-      
-      // Ambil output values
-      const currentOutputs = get().outputValues;
+      // Hitung output secara pure function
       outputComponents.forEach(output => {
-        row[output.id] = currentOutputs[output.id] || false;
+        row[output.id] = calculateComponentValue(output.id, row);
       });
-      
       truthTable.push(row);
-      
-      // Restore original input values
-      set({ inputValues: originalInputValues });
     }
-    
     return truthTable;
-  }
+  },
+
+  // Action untuk menyimpan rangkaian ke file JSON
+  saveCircuit: () => {
+    const state = get();
+    const data = {
+      components: state.components,
+      connections: state.connections,
+      inputValues: state.inputValues,
+      outputValues: state.outputValues,
+      mode: state.mode
+    };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'circuit.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  },
+  
+  // Action untuk memuat rangkaian dari file JSON
+  loadCircuit: (json) => {
+    let data;
+    try {
+      data = typeof json === 'string' ? JSON.parse(json) : json;
+    } catch (e) {
+      alert('File tidak valid!');
+      return;
+    }
+    // Validasi minimal struktur
+    if (!data.components || !data.connections) {
+      alert('File tidak valid!');
+      return;
+    }
+    set({
+      components: data.components,
+      connections: data.connections,
+      inputValues: data.inputValues || {},
+      outputValues: data.outputValues || {},
+      mode: data.mode || 'edit'
+    });
+  },
+
+  // Action untuk mengubah offset canvas
+  setCanvasOffset: (offset) => set({ canvasOffset: offset }),
+  
+  // Action untuk set zoom
+  setZoom: (zoom) => set({ zoom }),
 }));
 
 // Helper function untuk menghitung posisi pin
 const getPinPosition = (component, type, index) => {
   const baseX = component.position.x;
   const baseY = component.position.y;
-  
+
+  // Mapping posisi pin flip-flop agar konsisten dengan tampilan visual
+  if (
+    component.type === 'SR_FLIPFLOP' ||
+    component.type === 'D_FLIPFLOP' ||
+    component.type === 'JK_FLIPFLOP' ||
+    component.type === 'T_FLIPFLOP'
+  ) {
+    // Input pin
+    if (type === 'input') {
+      switch (component.type) {
+        case 'SR_FLIPFLOP':
+          return { x: baseX, y: baseY + [15, 45][index] };
+        case 'JK_FLIPFLOP':
+          return { x: baseX, y: baseY + [11, 30, 49][index] };
+        case 'D_FLIPFLOP':
+        case 'T_FLIPFLOP':
+          return { x: baseX, y: baseY + [15, 45][index] };
+        default:
+          return { x: baseX, y: baseY + 32 };
+      }
+    } else {
+      // Output pin
+      switch (component.type) {
+        case 'SR_FLIPFLOP':
+          return { x: baseX + 92, y: baseY + [15, 45][index] };
+        case 'JK_FLIPFLOP':
+          return { x: baseX + 92, y: baseY + [11, 49][index] };
+        case 'D_FLIPFLOP':
+        case 'T_FLIPFLOP':
+          return { x: baseX + 92, y: baseY + [15, 45][index] };
+        default:
+          return { x: baseX + 92, y: baseY + (index === 0 ? 24 : 56) };
+      }
+    }
+  }
   if (type === 'output') {
     return {
       x: baseX + (component.type === 'INPUT' ? 80 : 96), // Right side
@@ -258,4 +394,3 @@ const getPinPosition = (component, type, index) => {
     }
   }
 };
-
