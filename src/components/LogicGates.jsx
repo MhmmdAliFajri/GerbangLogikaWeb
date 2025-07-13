@@ -165,3 +165,88 @@ export const OutputLed = ({ id, position, value }) => {
   );
 };
 
+// Komponen untuk SR Flip-Flop
+export const SRFlipFlop = ({ id, position, inputs = [false, false], outputs = { Q: false, QBAR: true }, onInputChange }) => {
+  return (
+    <div
+      className="bg-white border-2 border-purple-400 rounded-lg p-2 w-28 h-20 flex flex-col items-center justify-center relative"
+      style={{ position: 'absolute', left: position.x, top: position.y }}
+    >
+      <div className="text-xs font-bold">SR Flip-Flop</div>
+      {/* Input pins */}
+      <div className="absolute left-0 top-4 w-2 h-2 bg-blue-500 rounded-full -translate-x-1" title="S"></div>
+      <div className="absolute left-0 bottom-4 w-2 h-2 bg-blue-500 rounded-full -translate-x-1" title="R"></div>
+      {/* Output pins */}
+      <div className="absolute right-0 top-1/3 w-2 h-2 bg-red-500 rounded-full translate-x-1" title="Q"></div>
+      <div className="absolute right-0 bottom-2 w-2 h-2 bg-gray-500 rounded-full translate-x-1" title="Q̅"></div>
+      {/* Output values */}
+      <div className="absolute right-6 top-1/4 text-xs font-bold text-green-700">Q: {outputs.Q ? '1' : '0'}</div>
+      <div className="absolute right-6 bottom-1 text-xs font-bold text-pink-700">Q̅: {outputs.QBAR ? '1' : '0'}</div>
+    </div>
+  );
+};
+
+// Komponen untuk D Flip-Flop
+export const DFlipFlop = ({ id, position, inputs = [false, false], outputs = { Q: false, QBAR: true }, onInputChange }) => {
+  return (
+    <div
+      className="bg-white border-2 border-purple-400 rounded-lg p-2 w-28 h-20 flex flex-col items-center justify-center relative"
+      style={{ position: 'absolute', left: position.x, top: position.y }}
+    >
+      <div className="text-xs font-bold">D Flip-Flop</div>
+      {/* Input pins */}
+      <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full -translate-x-1" title="D"></div>
+      <div className="absolute left-0 bottom-2 w-2 h-2 bg-blue-500 rounded-full -translate-x-1" title="CLK"></div>
+      {/* Output pins */}
+      <div className="absolute right-0 top-1/3 w-2 h-2 bg-red-500 rounded-full translate-x-1" title="Q"></div>
+      <div className="absolute right-0 bottom-2 w-2 h-2 bg-gray-500 rounded-full translate-x-1" title="Q̅"></div>
+      {/* Output values */}
+      <div className="absolute right-6 top-1/4 text-xs font-bold text-green-700">Q: {outputs.Q ? '1' : '0'}</div>
+      <div className="absolute right-6 bottom-1 text-xs font-bold text-pink-700">Q̅: {outputs.QBAR ? '1' : '0'}</div>
+    </div>
+  );
+};
+
+// Komponen untuk JK Flip-Flop
+export const JKFlipFlop = ({ id, position, inputs = [false, false, false], outputs = { Q: false, QBAR: true }, onInputChange }) => {
+  return (
+    <div
+      className="bg-white border-2 border-purple-400 rounded-lg p-2 w-28 h-20 flex flex-col items-center justify-center relative"
+      style={{ position: 'absolute', left: position.x, top: position.y }}
+    >
+      <div className="text-xs font-bold">JK Flip-Flop</div>
+      {/* Input pins */}
+      <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full -translate-x-1" title="J"></div>
+      <div className="absolute left-0 top-1/2 w-2 h-2 bg-blue-500 rounded-full -translate-x-1 -translate-y-1/2" title="K"></div>
+      <div className="absolute left-0 bottom-2 w-2 h-2 bg-blue-500 rounded-full -translate-x-1" title="CLK"></div>
+      {/* Output pins */}
+      <div className="absolute right-0 top-1/3 w-2 h-2 bg-red-500 rounded-full translate-x-1" title="Q"></div>
+      <div className="absolute right-0 bottom-2 w-2 h-2 bg-gray-500 rounded-full translate-x-1" title="Q̅"></div>
+      {/* Output values */}
+      <div className="absolute right-6 top-1/4 text-xs font-bold text-green-700">Q: {outputs.Q ? '1' : '0'}</div>
+      <div className="absolute right-6 bottom-1 text-xs font-bold text-pink-700">Q̅: {outputs.QBAR ? '1' : '0'}</div>
+    </div>
+  );
+};
+
+// Komponen untuk T Flip-Flop
+export const TFlipFlop = ({ id, position, inputs = [false, false], outputs = { Q: false, QBAR: true }, onInputChange }) => {
+  return (
+    <div
+      className="bg-white border-2 border-purple-400 rounded-lg p-2 w-28 h-20 flex flex-col items-center justify-center relative"
+      style={{ position: 'absolute', left: position.x, top: position.y }}
+    >
+      <div className="text-xs font-bold">T Flip-Flop</div>
+      {/* Input pins */}
+      <div className="absolute left-0 top-2 w-2 h-2 bg-blue-500 rounded-full -translate-x-1" title="T"></div>
+      <div className="absolute left-0 bottom-2 w-2 h-2 bg-blue-500 rounded-full -translate-x-1" title="CLK"></div>
+      {/* Output pins */}
+      <div className="absolute right-0 top-1/3 w-2 h-2 bg-red-500 rounded-full translate-x-1" title="Q"></div>
+      <div className="absolute right-0 bottom-2 w-2 h-2 bg-gray-500 rounded-full translate-x-1" title="Q̅"></div>
+      {/* Output values */}
+      <div className="absolute right-6 top-1/4 text-xs font-bold text-green-700">Q: {outputs.Q ? '1' : '0'}</div>
+      <div className="absolute right-6 bottom-1 text-xs font-bold text-pink-700">Q̅: {outputs.QBAR ? '1' : '0'}</div>
+    </div>
+  );
+};
+
